@@ -1,0 +1,157 @@
+#모델정리..!!! (Question과 Answer 해당하는 모델 정의)
+#models.py (pybo)
+'''python
+from django.db import models
+
+# Question 모델
+class Question(models.Model):
+    subject = models.CharField(max_length=200)    #제목 속성 #제목 길이 최대 200자 설정
+    content = models.TextField()                  #내용 속성 #글자수 제한x
+    create_date = models.DateTimeField()          #작성일시 속성 #날짜, 시간정보 저장
+
+
+    
+# Answer 모델 
+class Answer(models.Model):  #질문에 대한 답변이므로 Question 모델을 속성으로 포함
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)  #기존 모델 속성으로 연결
+    content =  models.TextField()
+    create_date = models.DateTimeField()
+    
+'''
+
+#테이블 생성 settings.py (config)
+'''python
+...
+INSTALLED_APPS = [
+    'pybo.apps.PyboConfig',    #추가된셀
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+...
+'''
+
+#명령프롬프트로 ㄱㄱ
+#테이블 생성(migrate 명령 실행)
+'''python
+(mysite) c:\projects\mysite>python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, sessions
+Running migrations:
+  No migrations to apply.
+  Your models in app(s): 'pybo' have changes that are not yet reflected in a migration, and so won't be applied.
+  Run 'manage.py makemigrations' to make new migrations, and then re-run 'manage.py migrate' to apply them.
+
+'''  #실행 제대로 안됨   (makemigrations 명령 먼저 실행하여 마이그레이션 파일 생성 후 에 수행 ㄱㄱ)
+
+
+#makemigrations 명령
+'''python
+
+(mysite) c:\projects\mysite>python manage.py makemigrations
+Migrations for 'pybo':
+  pybo\migrations\0001_initial.py  #이 파일이 자동으로 생성됨
+    + Create model Question
+    + Create model Answer
+'''
+
+#migrate 명령 실행
+'''python
+
+(mysite) c:\projects\mysite>python manage.py migrate
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, pybo, sessions
+Running migrations:
+  Applying pybo.0001_initial... OK
+'''
+
+#모델사용법! (장고 셸 이용)
+#장고셸 실행
+'''python
+
+(mysite) c:\projects\mysite>python manage.py shell
+8 objects imported automatically (use -v 2 for details).
+
+Python 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+'''
+
+#Question 생성
+'''python
+>>> from pybo.models import Question, Answer
+>>> from django.utils import timezone
+>>> q= Question(subject='pybo가 무엇인가요?', content='pybo에 대해서 알고싶습니다.', create_date=timezone.now())
+>>> q.save() #q 저장
+>>> q.id  #id 자동 생성
+1
+>>> q= Question(subject='장고 모델 질문입니다.', content='id는 자동으로 생성되나요?', create_date=timezone.now())
+>>> q.save()
+>>> q.id
+2
+'''
+
+#Question 조회
+'''python
+>>> Question.objects.all()
+<QuerySet [<Question: Question object (1)>, <Question: Question object (2)>]>
+'''
+#Question에 제목 표시하기!!! (models.py에서 __str__ 메서드 추가)
+'''python
+from django.db import models
+
+# Create your models here.
+class Question(models.Model):
+    subject = models.CharField(max_length=200)
+    content = models.TextField()
+    create_date = models.DateTimeField()
+
+    def __str__(self):
+        return self.subject  #이부분
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    content =  models.TextField()
+    create_date = models.DateTimeField()
+'''
+
+'''python
+>>> from pybo.models import Question, Answer
+>>> Question.objects.all()
+<QuerySet [<Question: pybo가 무엇인가요?>, <Question: 장고 모델 질문입니다.>]>    #(1),(2)에서 질문으로 바뀜
+>>> Question.objects.filter(id=1)   #데이터 모두 리턴-> QuerySet 객체 리턴됨
+<QuerySet [<Question: pybo가 무엇인가요?>]>
+>>> Question.objects.get(id=1)    #단일 데이터 조회
+<Question: pybo가 무엇인가요?>
+'''
+#Question 수정
+#수정할 데이터 조회하고 ,  q.subject='~~' 로 수정, q.save() 잊지말기..
+'''python
+q.subject='Django Model Question'
+q.save()
+'''
+
+#Question 삭제
+'''python
+q.delete()
+'''
+
+#Answer 
+'''python
+<Question: Django Model Question>
+>>> from django.utils import timezone
+>>> a= Answer(question=q, content='네 자동으로 생성됩니다.', create_date=timezone.now())
+>>> a.save()
+>>> a.id
+1
+>>> a = Answer.objects.get(id=1)
+>>> a
+<Answer: Answer object (1)>
+>>> a.question
+<Question: Django Model Question>
+>>> q.answer_set.all()      #a.question_set는 불가능(답변하나에 여러개 질문 불가능)
+<QuerySet [<Answer: Answer object (1)>]>
+'''
